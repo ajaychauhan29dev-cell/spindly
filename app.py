@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 
 from flask import (
     Flask,
@@ -12,6 +13,7 @@ from flask import (
 )
 from werkzeug.security import check_password_hash
 
+from database import queries
 from database.db import (  # noqa: F401
     create_user,
     get_db,
@@ -27,6 +29,24 @@ app.secret_key = "spendly-dev-secret-key"
 with app.app_context():
     init_db()
     seed_db()
+
+
+@app.template_filter("inr")
+def inr(value):
+    return f"₹{float(value or 0):,.2f}"
+
+
+@app.template_filter("fmt_date")
+def fmt_date(value):
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").strftime("%d %b %Y")
+    except (TypeError, ValueError):
+        return value
+
+
+def _initials(name):
+    parts = (name or "").split()[:2]
+    return "".join(p[0] for p in parts).upper() or "?"
 
 
 # ------------------------------------------------------------------ #
@@ -116,41 +136,22 @@ def privacy():
 
 @app.route("/profile")
 def profile():
-    if not session.get("user_id"):
+    user_id = session.get("user_id")
+    if not user_id:
         return redirect(url_for("login"))
 
-    user = {
-        "name": "Demo User",
-        "initials": "DU",
-        "email": "demo@spendly.com",
-        "member_since": "January 2026",
-    }
-    stats = {
-        "total_spent": "₹8,450.00",
-        "transaction_count": 8,
-        "top_category": "Bills",
-    }
-    transactions = [
-        {"date": "22 Oct 2026", "description": "Weekend shopping", "category": "Shopping", "amount": "₹1,800.00"},
-        {"date": "18 Oct 2026", "description": "Movie night", "category": "Entertainment", "amount": "₹600.00"},
-        {"date": "15 Oct 2026", "description": "Pharmacy", "category": "Health", "amount": "₹450.00"},
-        {"date": "12 Oct 2026", "description": "Electricity bill", "category": "Bills", "amount": "₹2,400.00"},
-        {"date": "08 Oct 2026", "description": "Metro card recharge", "category": "Transport", "amount": "₹500.00"},
-        {"date": "03 Oct 2026", "description": "Groceries", "category": "Food", "amount": "₹1,200.00"},
-    ]
-    categories = [
-        {"name": "Bills", "total": "₹2,400.00", "percent": 28},
-        {"name": "Shopping", "total": "₹1,800.00", "percent": 21},
-        {"name": "Food", "total": "₹1,200.00", "percent": 14},
-        {"name": "Entertainment", "total": "₹600.00", "percent": 7},
-        {"name": "Transport", "total": "₹500.00", "percent": 6},
-    ]
+    user = queries.get_user_by_id(user_id)
+    if user is None:
+        session.clear()
+        return redirect(url_for("login"))
+    user["initials"] = _initials(user["name"])
+
     return render_template(
         "profile.html",
         user=user,
-        stats=stats,
-        transactions=transactions,
-        categories=categories,
+        stats=queries.get_summary_stats(user_id),
+        transactions=queries.get_recent_transactions(user_id),
+        categories=queries.get_category_breakdown(user_id),
     )
 
 

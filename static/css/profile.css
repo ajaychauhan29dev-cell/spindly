@@ -247,3 +247,9 @@
         grid-row: 2;
     }
 }
+
+.empty-state {
+    padding: 1.5rem 0;
+    color: var(--ink-muted);
+    text-align: center;
+}

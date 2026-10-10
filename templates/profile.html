@@ -22,7 +22,7 @@
         <div class="stats-row">
             <div class="stat-tile">
                 <span class="stat-label">Total spent</span>
-                <span class="stat-value">{{ stats.total_spent }}</span>
+                <span class="stat-value">{{ stats.total_spent|inr }}</span>
             </div>
             <div class="stat-tile">
                 <span class="stat-label">Transactions</span>
@@ -39,6 +39,9 @@
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></svg>
                 Recent transactions
             </h2>
+            {% if not transactions %}
+            <p class="empty-state">No expenses yet.</p>
+            {% else %}
             <div class="table-wrap">
                 <table class="txn-table">
                     <thead>
@@ -52,15 +55,16 @@
                     <tbody>
                         {% for t in transactions %}
                         <tr>
-                            <td>{{ t.date }}</td>
+                            <td>{{ t.date|fmt_date }}</td>
                             <td>{{ t.description }}</td>
                             <td><span class="badge badge-{{ t.category|lower }}">{{ t.category }}</span></td>
-                            <td class="txn-amount">{{ t.amount }}</td>
+                            <td class="txn-amount">{{ t.amount|inr }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
+            {% endif %}
         </div>
 
         <div class="profile-panel">
@@ -68,15 +72,19 @@
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
                 Category breakdown
             </h2>
+            {% if not categories %}
+            <p class="empty-state">No spending to break down yet.</p>
+            {% else %}
             <ul class="category-list">
                 {% for c in categories %}
                 <li class="category-row">
                     <span class="badge badge-{{ c.name|lower }}">{{ c.name }}</span>
-                    <progress class="category-bar" value="{{ c.percent }}" max="100">{{ c.percent }}%</progress>
-                    <span class="category-total">{{ c.total }}</span>
+                    <progress class="category-bar" value="{{ c.pct }}" max="100">{{ c.pct }}%</progress>
+                    <span class="category-total">{{ c.amount|inr }}</span>
                 </li>
                 {% endfor %}
             </ul>
+            {% endif %}
         </div>
 
     </div>

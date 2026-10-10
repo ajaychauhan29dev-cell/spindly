@@ -12,7 +12,8 @@ Spendly is a lightweight personal expense tracker built with Flask and SQLite.
 spendly/
 ├── app.py              # All routes — single file, no blueprints
 ├── database/
-│   └── db.py           # SQLite helpers: get_db(), init_db(), seed_db()
+│   ├── db.py           # SQLite helpers: get_db(), init_db(), seed_db()
+│   └── queries.py      # Read-only profile queries (no Flask imports)
 ├── templates/
 │   ├── base.html       # Shared layout — all templates must extend this
 │   └── *.html          # One template per page
@@ -28,7 +29,7 @@ spendly/
 **Where things belong:**
 
 - New routes → `app.py` only, no blueprints
-- DB logic → `database/db.py` only, never inline in routes
+- DB logic → `database/db.py` (writes/setup) or `database/queries.py` (read queries), never inline in routes
 - New pages → new `.html` file extending `base.html`
 - Page-specific styles → new `.css` file, not inline `<style>` tags
 
@@ -113,7 +114,7 @@ pytest -s
 
 - **Never use raw string returns for stub routes** once a step is implemented — always render a template
 - **Never hardcode URLs** in templates — always use `url_for()`
-- **Never put DB logic in route functions** — it belongs in `database/db.py`
+- **Never put DB logic in route functions** — it belongs in `database/db.py` or `database/queries.py`
 - **Never install new packages** mid-feature without flagging it — keep `requirements.txt` in sync
 - **Never use JS frameworks** — the frontend is intentionally vanilla
 - **`database/db.py` is currently empty** — do not assume helpers exist until the step that implements them
