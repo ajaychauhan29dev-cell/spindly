@@ -47,7 +47,7 @@ def test_get_login_renders_form(client):
 def test_valid_login_sets_session_and_redirects(client, user_id):
     resp = _login(client)
     assert resp.status_code == 302
-    assert resp.headers["Location"].endswith("/")
+    assert resp.headers["Location"].endswith("/profile")
     with client.session_transaction() as sess:
         assert sess["user_id"] == user_id
 
@@ -102,7 +102,7 @@ def test_logged_in_user_redirected_from_auth_pages(client, user_id, path):
     _login(client)
     for resp in (client.get(path), client.post(path, data={})):
         assert resp.status_code == 302
-        assert resp.headers["Location"].endswith("/")
+        assert resp.headers["Location"].endswith("/profile")
 
 
 def test_nav_shows_sign_out_only_when_logged_in(client, user_id):
