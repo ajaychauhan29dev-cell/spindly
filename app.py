@@ -1,8 +1,12 @@
-from flask import Flask, render_template
+import sqlite3
 
-from database.db import get_db, init_db, seed_db  # noqa: F401
+from flask import Flask, abort, flash, redirect, render_template, request, url_for
+
+from database.db import create_user, get_db, init_db, seed_db  # noqa: F401
 
 app = Flask(__name__)
+# Dev-only key for flash(); replace with a real secret before deploying.
+app.secret_key = "spendly-dev-secret-key"
 
 with app.app_context():
     init_db()
@@ -18,9 +22,36 @@ def landing():
     return render_template("landing.html")
 
 
-@app.route("/register")
+@app.route("/register", methods=["GET", "POST"])
 def register():
-    return render_template("register.html")
+    if request.method == "GET":
+        return render_template("register.html")
+
+    if request.method != "POST":
+        abort(405)
+
+    name = request.form.get("name", "").strip()
+    email = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "")
+    confirm_password = request.form.get("confirm_password", "")
+
+    error = None
+    if not (name and email and password and confirm_password):
+        error = "All fields are required."
+    elif password != confirm_password:
+        error = "Passwords do not match."
+    else:
+        try:
+            create_user(name, email, password)
+        except sqlite3.IntegrityError:
+            error = "Email already registered."
+
+    if error:
+        flash(error, "error")
+        return render_template("register.html", name=name, email=email)
+
+    flash("Account created! Please sign in.", "success")
+    return redirect(url_for("login"))
 
 
 @app.route("/login")
