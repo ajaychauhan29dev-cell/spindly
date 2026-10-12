@@ -56,12 +56,12 @@ def get_user_by_id(user_id):
 
 def get_recent_transactions(user_id, limit=10, *, date_from=None, date_to=None):
     """Return the user's latest expenses (within the date range, if given) as
-    [{date, description, category, amount}], newest first."""
+    [{id, date, description, category, amount}], newest first."""
     clause, params = _date_clause(date_from, date_to)
     conn = db.get_db()
     try:
         rows = conn.execute(
-            "SELECT date, description, category, amount FROM expenses "
+            "SELECT id, date, description, category, amount FROM expenses "
             "WHERE user_id = ?" + clause + " ORDER BY date DESC, id DESC LIMIT ?",
             (user_id, *params, limit),
         ).fetchall()
@@ -70,6 +70,7 @@ def get_recent_transactions(user_id, limit=10, *, date_from=None, date_to=None):
 
     return [
         {
+            "id": row["id"],
             "date": row["date"],
             "description": row["description"],
             "category": row["category"],
@@ -158,5 +159,36 @@ def insert_expense(user_id, amount, category, expense_date, description):
         )
         conn.commit()
         return cur.lastrowid
+    finally:
+        conn.close()
+
+
+def get_expense_by_id(expense_id, user_id):
+    """Return the expense as a dict if it belongs to the user, else None."""
+    conn = db.get_db()
+    try:
+        row = conn.execute(
+            "SELECT id, amount, category, date, description "
+            "FROM expenses WHERE id = ? AND user_id = ?",
+            (expense_id, user_id),
+        ).fetchone()
+    finally:
+        conn.close()
+    return dict(row) if row else None
+
+
+def update_expense(
+    expense_id, user_id, amount, category, expense_date, description
+):
+    """Update the user's expense in place and return the number of rows changed."""
+    conn = db.get_db()
+    try:
+        cur = conn.execute(
+            "UPDATE expenses SET amount = ?, category = ?, date = ?, description = ? "
+            "WHERE id = ? AND user_id = ?",
+            (amount, category, expense_date, description, expense_id, user_id),
+        )
+        conn.commit()
+        return cur.rowcount
     finally:
         conn.close()
