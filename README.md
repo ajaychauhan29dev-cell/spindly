@@ -2,6 +2,8 @@
 
 Spendly is a lightweight personal expense tracker built with **Flask** and **SQLite**, with a vanilla-JS front end and no ORM. Users register, sign in and land on a profile page that shows **live spending stats, recent transactions and a per-category breakdown**, all filterable by date range. The project was built step by step with Claude Code, one spec per feature, with a review and testing subagent pipeline around each step.
 
+**Live demo:** https://spendly-production-c144.up.railway.app — sign in with `demo@spendly.com` / `demo123`. Hosted on Railway, with the SQLite database on a persistent volume.
+
 ```
 Total spent       ₹366.24        8 transactions   (seeded demo data)
 Top category      Bills          ₹120.00   32.8%
