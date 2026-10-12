@@ -1,8 +1,13 @@
-"""Read-only query helpers for the profile page. No Flask imports."""
+"""Query helpers for the profile page, plus the expense write helper.
+
+No Flask imports.
+"""
 
 from datetime import datetime
 
 from database import db
+
+CATEGORIES = db.CATEGORIES
 
 
 def _date_clause(date_from, date_to):
@@ -137,3 +142,21 @@ def get_category_breakdown(user_id, date_from=None, date_to=None):
         item["pct"] = round(item["amount"] / grand_total * 100)
     items[0]["pct"] += 100 - sum(item["pct"] for item in items)
     return items
+
+
+# === SECTION: WRITES ===
+
+
+def insert_expense(user_id, amount, category, expense_date, description):
+    """Insert an expense for the user and return its new row id."""
+    conn = db.get_db()
+    try:
+        cur = conn.execute(
+            "INSERT INTO expenses (user_id, amount, category, date, description) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (user_id, amount, category, expense_date, description),
+        )
+        conn.commit()
+        return cur.lastrowid
+    finally:
+        conn.close()

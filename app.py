@@ -1,4 +1,5 @@
 import calendar
+import math
 import sqlite3
 from datetime import date, datetime
 
@@ -22,6 +23,9 @@ from database.db import (  # noqa: F401
     init_db,
     seed_db,
 )
+
+MAX_AMOUNT = 10_000_000
+MAX_DESCRIPTION_LENGTH = 200
 
 app = Flask(__name__)
 # Dev-only key for flash(); replace with a real secret before deploying.
@@ -73,6 +77,43 @@ def _resolve_date_range(args):
         flash("Start date must be before end date.", "error")
         return None, None
     return date_from, date_to
+
+
+def _validate_expense_form(form):
+    """Validate add-expense form values (already whitespace-stripped).
+
+    Returns (expense_kwargs, None) on success or (None, error_message) on the
+    first failure. The kwargs keys match queries.insert_expense's parameters.
+    """
+    if not form["amount"]:
+        return None, "Amount is required."
+    try:
+        amount = float(form["amount"])
+    except ValueError:
+        return None, "Amount must be a number."
+    # float() happily parses "nan" and "inf", so they must be rejected here.
+    if not math.isfinite(amount) or amount <= 0 or amount > MAX_AMOUNT:
+        return None, f"Amount must be between 0.01 and {MAX_AMOUNT:,}."
+
+    if form["category"] not in queries.CATEGORIES:
+        return None, "Please choose a valid category."
+
+    expense_date = _parse_date(form["date"])
+    if expense_date is None:
+        return None, "Please enter a valid date."
+
+    description = form["description"]
+    if len(description) > MAX_DESCRIPTION_LENGTH:
+        return None, (
+            f"Description must be {MAX_DESCRIPTION_LENGTH} characters or fewer."
+        )
+
+    return {
+        "amount": round(amount, 2),
+        "category": form["category"],
+        "expense_date": expense_date,
+        "description": description or None,
+    }, None
 
 
 def _months_ago(today, months):
@@ -240,9 +281,33 @@ def profile():
     )
 
 
-@app.route("/expenses/add")
+@app.route("/expenses/add", methods=["GET", "POST"])
 def add_expense():
-    return "Add expense — coming in Step 7"
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
+
+    form = {
+        "amount": "",
+        "category": "",
+        "date": date.today().isoformat(),
+        "description": "",
+    }
+    if request.method == "POST":
+        form = {key: request.form.get(key, "").strip() for key in form}
+        expense, error = _validate_expense_form(form)
+        if not error:
+            queries.insert_expense(user_id, **expense)
+            flash("Expense added.", "success")
+            return redirect(url_for("profile"))
+        flash(error, "error")
+
+    return render_template(
+        "add_expense.html",
+        categories=queries.CATEGORIES,
+        form=form,
+        max_description=MAX_DESCRIPTION_LENGTH,
+    )
 
 
 @app.route("/expenses/<int:id>/edit")
