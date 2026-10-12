@@ -1,5 +1,6 @@
+import calendar
 import sqlite3
-from datetime import datetime
+from datetime import date, datetime
 
 from flask import (
     Flask,
@@ -47,6 +48,74 @@ def fmt_date(value):
 def _initials(name):
     parts = (name or "").split()[:2]
     return "".join(p[0] for p in parts).upper() or "?"
+
+
+def _parse_date(value):
+    """Return value as a zero-padded YYYY-MM-DD string, or None if invalid."""
+    try:
+        return datetime.strptime(value or "", "%Y-%m-%d").date().isoformat()
+    except ValueError:
+        return None
+
+
+def _resolve_date_range(args):
+    """Validate date_from/date_to query args; return (date_from, date_to).
+
+    Anything other than a valid, correctly ordered pair means "no filter".
+    Only a reversed range is reported to the user; malformed or missing
+    dates silently fall back to the unfiltered view.
+    """
+    date_from = _parse_date(args.get("date_from"))
+    date_to = _parse_date(args.get("date_to"))
+    if not (date_from and date_to):
+        return None, None
+    if date_from > date_to:
+        flash("Start date must be before end date.", "error")
+        return None, None
+    return date_from, date_to
+
+
+def _months_ago(today, months):
+    """Return the date `months` calendar months before today (day clamped)."""
+    index = today.year * 12 + today.month - 1 - months
+    year, month = divmod(index, 12)
+    month += 1
+    day = min(today.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
+def _build_presets(today):
+    """Return the quick-select filter presets with their date ranges."""
+    end = today.isoformat()
+    return [
+        {
+            "key": "this_month",
+            "label": "This Month",
+            "date_from": today.replace(day=1).isoformat(),
+            "date_to": end,
+        },
+        {
+            "key": "last_3_months",
+            "label": "Last 3 Months",
+            "date_from": _months_ago(today, 3).isoformat(),
+            "date_to": end,
+        },
+        {
+            "key": "last_6_months",
+            "label": "Last 6 Months",
+            "date_from": _months_ago(today, 6).isoformat(),
+            "date_to": end,
+        },
+        {"key": "all_time", "label": "All Time", "date_from": None, "date_to": None},
+    ]
+
+
+def _active_preset(presets, date_from, date_to):
+    """Return the matching preset key, or "custom" for an unmatched range."""
+    for preset in presets:
+        if (preset["date_from"], preset["date_to"]) == (date_from, date_to):
+            return preset["key"]
+    return "custom"
 
 
 # ------------------------------------------------------------------ #
@@ -153,12 +222,21 @@ def profile():
         return redirect(url_for("login"))
     user["initials"] = _initials(user["name"])
 
+    date_from, date_to = _resolve_date_range(request.args)
+    presets = _build_presets(date.today())
+
     return render_template(
         "profile.html",
         user=user,
-        stats=queries.get_summary_stats(user_id),
-        transactions=queries.get_recent_transactions(user_id),
-        categories=queries.get_category_breakdown(user_id),
+        stats=queries.get_summary_stats(user_id, date_from, date_to),
+        transactions=queries.get_recent_transactions(
+            user_id, date_from=date_from, date_to=date_to
+        ),
+        categories=queries.get_category_breakdown(user_id, date_from, date_to),
+        presets=presets,
+        active_preset=_active_preset(presets, date_from, date_to),
+        date_from=date_from,
+        date_to=date_to,
     )
 
 
