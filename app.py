@@ -1,5 +1,6 @@
 import calendar
 import math
+import os
 import sqlite3
 from datetime import date, datetime
 
@@ -28,8 +29,8 @@ MAX_AMOUNT = 10_000_000
 MAX_DESCRIPTION_LENGTH = 200
 
 app = Flask(__name__)
-# Dev-only key for flash(); replace with a real secret before deploying.
-app.secret_key = "spendly-dev-secret-key"
+# Set SECRET_KEY in production; the fallback is for local development only.
+app.secret_key = os.environ.get("SECRET_KEY", "spendly-dev-secret-key")
 
 with app.app_context():
     init_db()
