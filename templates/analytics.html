@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics — Spendly{% endblock %}
+
+{% block head %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/analytics.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="an-page">
+    <div class="an-inner">
+
+        <div class="an-intro">
+            <span class="an-label">In the works</span>
+            <div class="an-hero">
+                <h1 class="an-title">Coming soon.<br>A new feature is on the way.</h1>
+                <p class="an-lead">
+                    This placeholder keeps the page live while the next experience is being built.
+                    Use it for any upcoming feature, release, or module without implying the whole
+                    site is unavailable.
+                </p>
+            </div>
+        </div>
+
+        <div class="an-row">
+            <div class="an-card an-details">
+                <div class="an-meta">
+                    <p class="an-card-title">Feature details</p>
+                    <div class="an-meta-list">
+                        <div class="an-meta-item">
+                            <p class="an-meta-label">Feature name</p>
+                            <p class="an-meta-value">Analytics</p>
+                        </div>
+                        <div class="an-meta-item">
+                            <p class="an-meta-label">Release window</p>
+                            <p class="an-meta-value">To be announced</p>
+                        </div>
+                        <div class="an-meta-item">
+                            <p class="an-meta-label">What to expect</p>
+                            <p class="an-meta-value">Spending trends and category insights</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="an-status">
+                    <p class="an-card-title">Status</p>
+                    <div class="an-status-list">
+                        <div class="an-status-row">
+                            <span class="an-status-name">Design</span>
+                            <span class="an-pill an-pill-done">Done</span>
+                        </div>
+                        <div class="an-status-row">
+                            <span class="an-status-name">Build</span>
+                            <span class="an-pill an-pill-progress">In progress</span>
+                        </div>
+                        <div class="an-status-row">
+                            <span class="an-status-name">QA</span>
+                            <span class="an-pill an-pill-pending">Pending</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="an-actions">
+                    <p class="an-actions-title">Keep exploring the current experience</p>
+                    <div class="an-actions-row">
+                        <a href="{{ url_for('profile') }}" class="an-btn an-btn-primary">Back to app</a>
+                        <a href="{{ url_for('landing') }}" class="an-btn an-btn-secondary">Learn more</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="an-card an-preview">
+                <div class="an-wireframe">
+                    <div class="an-toolbar">
+                        <span class="an-dot"></span>
+                        <span class="an-dot"></span>
+                        <span class="an-dot"></span>
+                        <p class="an-toolbar-title">Upcoming feature preview</p>
+                        <span class="an-toolbar-spacer"></span>
+                    </div>
+
+                    <div class="an-preview-body">
+                        <div class="an-preview-head">
+                            <p class="an-preview-title">Feature preview</p>
+                            <span class="an-tag">Placeholder ▾</span>
+                        </div>
+
+                        <div class="an-summary">
+                            <div class="an-tile">
+                                <p class="an-tile-label">Key metric</p>
+                                <p class="an-tile-value">[Value]</p>
+                            </div>
+                            <div class="an-tile">
+                                <p class="an-tile-label">Secondary metric</p>
+                                <p class="an-tile-value">[Value]</p>
+                            </div>
+                            <div class="an-tile">
+                                <p class="an-tile-label">Status</p>
+                                <p class="an-tile-value">[Status]</p>
+                            </div>
+                        </div>
+
+                        <div class="an-panels">
+                            <div class="an-panel an-chart">
+                                <p class="an-tile-label">Trend preview</p>
+                                <div class="an-plot">
+                                    <span class="an-bar an-bar-gold" style="height: 42px"></span>
+                                    <span class="an-bar an-bar-green" style="height: 68px"></span>
+                                    <span class="an-bar an-bar-gold" style="height: 50px"></span>
+                                    <span class="an-bar an-bar-green" style="height: 82px"></span>
+                                </div>
+                                <div class="an-axis">
+                                    <span>P1</span><span>P2</span><span>P3</span><span>P4</span>
+                                </div>
+                            </div>
+
+                            <div class="an-panel an-list">
+                                <p class="an-tile-label">Related items</p>
+                                <div class="an-list-items">
+                                    {% for width in (112, 86, 100) %}
+                                    <div class="an-list-row">
+                                        <span class="an-check"></span>
+                                        <div class="an-lines">
+                                            <span class="an-line an-line-gold" style="width: {{ width }}px"></span>
+                                            <span class="an-line an-line-grey"></span>
+                                        </div>
+                                        <span class="an-line an-line-green"></span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="an-caption">Feature preview · Low-fidelity wireframe</p>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}
