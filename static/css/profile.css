@@ -242,6 +242,25 @@
     text-decoration: underline;
 }
 
+.txn-table .delete-form {
+    display: inline;
+}
+
+.txn-table .btn-delete {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-left: 0.75rem;
+    font: inherit;
+    font-weight: 500;
+    color: var(--danger);
+    cursor: pointer;
+}
+
+.txn-table .btn-delete:hover {
+    text-decoration: underline;
+}
+
 /* Category badges */
 .badge {
     display: inline-block;
