@@ -80,10 +80,11 @@ def _resolve_date_range(args):
 
 
 def _validate_expense_form(form):
-    """Validate add-expense form values (already whitespace-stripped).
+    """Validate add/edit expense form values (already whitespace-stripped).
 
     Returns (expense_kwargs, None) on success or (None, error_message) on the
-    first failure. The kwargs keys match queries.insert_expense's parameters.
+    first failure. The kwargs keys (notably expense_date) match the parameters
+    of both queries.insert_expense and queries.update_expense.
     """
     if not form["amount"]:
         return None, "Amount is required."
@@ -310,9 +311,39 @@ def add_expense():
     )
 
 
-@app.route("/expenses/<int:id>/edit")
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
 def edit_expense(id):
-    return "Edit expense — coming in Step 8"
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
+
+    expense = queries.get_expense_by_id(id, user_id)
+    if expense is None:
+        abort(404)
+
+    form = {
+        "amount": f"{expense['amount']:.2f}",
+        "category": expense["category"],
+        "date": expense["date"],
+        "description": expense["description"] or "",
+    }
+    if request.method == "POST":
+        form = {key: request.form.get(key, "").strip() for key in form}
+        values, error = _validate_expense_form(form)
+        if not error:
+            if not queries.update_expense(id, user_id, **values):
+                abort(404)
+            flash("Expense updated.", "success")
+            return redirect(url_for("profile"))
+        flash(error, "error")
+
+    return render_template(
+        "edit_expense.html",
+        categories=queries.CATEGORIES,
+        form=form,
+        expense_id=id,
+        max_description=MAX_DESCRIPTION_LENGTH,
+    )
 
 
 @app.route("/expenses/<int:id>/delete")

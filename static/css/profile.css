@@ -232,6 +232,16 @@
     background: var(--paper-warm);
 }
 
+.txn-table .txn-action {
+    color: var(--accent);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.txn-table .txn-action:hover {
+    text-decoration: underline;
+}
+
 /* Category badges */
 .badge {
     display: inline-block;

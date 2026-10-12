@@ -18,7 +18,7 @@ def _add_expense(user_id, amount, category, date, description="test"):
 def test_seeded_user_gets_eight_rows_with_keys(seeded_db):
     result = get_recent_transactions(seeded_db)
     assert len(result) == 8
-    assert set(result[0]) == {"date", "description", "category", "amount"}
+    assert set(result[0]) == {"id", "date", "description", "category", "amount"}
 
 
 def test_dates_descending(seeded_db):
