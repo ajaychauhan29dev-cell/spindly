@@ -10,6 +10,18 @@ DB_PATH = os.path.join(
 )
 
 
+# Fixed expense categories; the single source of truth for forms and seed data.
+CATEGORIES = (
+    "Food",
+    "Transport",
+    "Bills",
+    "Health",
+    "Entertainment",
+    "Shopping",
+    "Other",
+)
+
+
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
