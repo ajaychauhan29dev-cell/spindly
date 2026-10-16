@@ -1,64 +1,134 @@
 # Loops for Spendly
 
-Four loop types from Anthropic's "Getting started with loops", each mapped to a
-real Spendly job. Start with the simplest one that fits.
+This document describes how to use Claude Code loops safely in Spendly.
 
-| Type | Trigger | Stops when | Spendly use |
-| --- | --- | --- | --- |
-| Turn-based | your prompt | Claude finishes | Build a feature; `verify-spendly` skill checks it |
-| Goal-based | `/goal` | condition met or turn cap | Raise test coverage, fix all failing tests |
-| Time-based | `/loop`, `/schedule` | you cancel / work done | Watch production health, watch a PR |
-| Proactive | schedule/event | each task's goal met | Weekly dependency + security sweep |
+## The four layers
 
-## 1. Turn-based — verification skill
+| Mechanism       | Purpose                           | Example                          |
+| --------------- | --------------------------------- | -------------------------------- |
+| `CLAUDE.md`     | Persistent project rules          | Flask, SQLite, parameterized SQL |
+| `/loop-feature` | Reusable implementation procedure | Implement, test, repair, review  |
+| `/goal`         | Bounded completion objective      | Make the date-filter tests pass  |
+| `/loop`         | Recurring scheduled work          | Check CI every five minutes      |
 
-Prompt: `Add a monthly budget field to the profile page, then run /verify-spendly`
+Hooks and scripts provide deterministic automation. They complement
+these mechanisms; they do not replace acceptance criteria or tests.
 
-The skill in `.claude/skills/verify-spendly/SKILL.md` turns "does it work?" into
-repeatable steps (tests, `/health`, smoke script, browser check).
+## 1. Turn-based implementation
 
-## 2. Goal-based — `/goal`
+Use `/loop-feature` for a normal feature or bug fix.
 
-Use deterministic exit criteria and a turn cap:
+Examples:
 
-```
-/goal pytest passes with 0 failures and every route in app.py has at least one test in tests/. Run /verify-spendly before stopping. Stop after 8 turns.
-```
+    /loop-feature 07-add-expense
 
-```
-/goal GET /health returns status ok locally and `python scripts/smoke_check.py` exits 0. Stop after 5 turns.
-```
+    /loop-feature Fix incorrect totals on the analytics page.
 
-## 3. Time-based — `/loop` (local) and `/schedule` (cloud)
+The skill inspects the repository, records baseline test results,
+implements a bounded change, verifies the behavior, repairs failures,
+and produces a final report.
 
-Watch production (cheap: the script does the checking, the model only reacts):
+It must not commit, push, merge, or deploy.
 
-```
-/loop 15m run `python scripts/smoke_check.py https://spendly-production-c144.up.railway.app`; if anything fails, check Railway logs, diagnose, and report. Do nothing if all pass.
-```
+## 2. Goal-based implementation
 
-Babysit a PR:
+Use `/goal` when your Claude Code version supports it and the task
+needs multiple turns to reach a measurable completion condition.
 
-```
-/loop 5m check my PR, address review comments, and fix failing CI
-```
+Example:
 
-Move it to the cloud so it survives closing your laptop:
+    /goal Implement spec 07-add-expense using /loop-feature. The full
+    pytest suite must pass, the acceptance criteria in the spec must
+    be satisfied, and applicable smoke checks must pass. Stop after
+    8 turns and report any remaining failures.
 
-```
-/schedule every hour: run the production smoke check against the live URL and open an issue if /health is not ok
-```
+Another example:
 
-## 4. Proactive — routines
+    /goal Diagnose the failing date-filter tests, fix the root cause,
+    and run the full test suite. Stop after 5 turns.
 
-```
-/schedule every Monday 09:00: run pytest; check requirements.txt pins for known CVEs and newer patch versions; if tests still pass after bumping a patch version, open a PR. Never bump majors. Do not merge.
-```
+Rules:
 
-## Cost controls
+- Always define an observable success condition.
+- Always set a turn cap.
+- Preserve baseline failures as baseline failures.
+- Do not weaken tests to make the objective pass.
+- Report blockers instead of looping without progress.
 
-- Poll no faster than the system changes (production health: 15m, not 1m).
-- Put deterministic work in `scripts/` so the model is not re-reasoning it.
-- Always give `/goal` a turn cap and a measurable condition.
-- Use a smaller model for routine routines; keep the best model for judgment.
-- Pilot on one task, then check `/usage` before widening.
+A goal is an orchestration mechanism, not proof of correctness.
+Actual command results determine whether verification succeeded.
+
+## 3. Time-based loops
+
+Use `/loop` for a task that should be repeated periodically, not
+for repeatedly re-implementing the same feature.
+
+For example, to check CI:
+
+    /loop 5m Check the CI status for my Spendly feature branch.
+    Report new failures and their relevant diagnostics. Do not push,
+    merge, or modify branch protection.
+
+For a production health check, prefer a deterministic smoke-check
+script and an explicitly authorized monitoring target. Avoid frequent
+polling that adds cost without useful information.
+
+Do not automatically edit code or open/merge PRs as a side effect
+of recurring monitoring unless that behavior is explicitly designed
+and authorized.
+
+Availability and exact command syntax can vary by Claude Code version.
+
+## 4. Verification
+
+Spendly's verification workflow is documented in:
+
+    .claude/skills/verify-spendly/SKILL.md
+
+Run the applicable checks:
+
+    python -m pytest -q
+
+    python scripts/smoke_check.py http://localhost:5001
+
+The smoke check requires the application to be running and the
+environment to be configured correctly.
+
+Do not claim that tests, browser checks, or smoke checks passed
+unless they were actually executed and passed.
+
+## 5. Repair limits
+
+The implementation skill permits at most five repair cycles.
+
+Stop early when:
+
+- All acceptance criteria and required checks pass.
+- The same failure repeats without new evidence.
+- Credentials or environment limitations block progress.
+- Requirements need clarification.
+- Further work would require a destructive or unauthorized action.
+
+## 6. Human review and shipping
+
+Before shipping:
+
+- Inspect the complete diff.
+- Review security-sensitive changes.
+- Confirm tests and applicable verification checks pass.
+- Resolve critical and high-severity review findings.
+- Obtain approval for any consequential action.
+
+The implementation loop never commits, pushes, merges, or deploys.
+
+Use the existing review and shipping procedures only after the
+implementation and verification stages are complete.
+
+## 7. Cost controls
+
+- Use focused tests during implementation.
+- Run the full suite at the verification gate.
+- Avoid repeatedly reading unrelated files.
+- Do not launch parallel agents that edit the same files.
+- Set turn and repair-cycle limits.
+- Prefer deterministic scripts for repeatable checks.
