@@ -30,6 +30,17 @@ def get_db():
     return conn
 
 
+def check_db():
+    """Probe the database for the /health endpoint; returns counts or raises."""
+    conn = get_db()
+    try:
+        users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+        expenses = conn.execute("SELECT COUNT(*) FROM expenses").fetchone()[0]
+        return {"users": users, "expenses": expenses}
+    finally:
+        conn.close()
+
+
 def init_db():
     conn = get_db()
     try:
