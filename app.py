@@ -8,6 +8,7 @@ from flask import (
     Flask,
     abort,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -18,6 +19,7 @@ from werkzeug.security import check_password_hash
 
 from database import queries
 from database.db import (  # noqa: F401
+    check_db,
     create_user,
     get_db,
     get_user_by_email,
@@ -168,6 +170,16 @@ def _active_preset(presets, date_from, date_to):
 @app.route("/")
 def landing():
     return render_template("landing.html")
+
+
+@app.route("/health")
+def health():
+    """Liveness + DB probe for uptime monitors and the /loop smoke check."""
+    try:
+        counts = check_db()
+    except sqlite3.Error:
+        return jsonify(status="error", db="unreachable"), 503
+    return jsonify(status="ok", db="ok", **counts)
 
 
 @app.route("/register", methods=["GET", "POST"])
